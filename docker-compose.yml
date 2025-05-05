@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+  # API Service
+  api:
+    build:
+      context: ./docker/api
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=vpn4u
+      - DB_USERNAME=root
+      - DB_PASSWORD=secret
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your_jwt_secret_key
+
+  # VPN Server
+  vpn-server:
+    build:
+      context: ./docker/vpn-server
+    privileged: true
+    ports:
+      - "1194:1194/udp"
+    volumes:
+      - ./storage/vpn:/etc/openvpn
+    cap_add:
+      - NET_ADMIN
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=vpn4u
+      - MYSQL_ROOT_PASSWORD=secret
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  # Redis for Caching and Sessions
+  redis:
+    image: redis:6.2
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  # Prometheus for Monitoring
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  # Admin Dashboard - Simple Web Interface
+  admin-dashboard:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public/admin:/usr/share/nginx/html
+
+volumes:
+  mysql-data:
+  redis-data:
