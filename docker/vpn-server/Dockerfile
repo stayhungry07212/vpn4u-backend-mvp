@@ -1,29 +1,34 @@
-# Create admin dashboard directory
-mkdir -p public/admin
+FROM alpine:3.15
 
-# Create index.html file
-cat > public/admin/index.html << 'EOL'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPN4U Admin Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.production.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/recharts@2.1.9/umd/Recharts.min.js"></script>
-</head>
-<body>
-    <div id="root"></div>
-    <script src="js/dashboard.js"></script>
-</body>
-</html>
-EOL
+# Install OpenVPN and dependencies
+RUN apk add --no-cache openvpn easy-rsa bash curl jq openssl iptables
 
-# Create js directory
-mkdir -p public/admin/js
+# Set up Easy-RSA environment
+WORKDIR /etc/openvpn/easy-rsa
+RUN ln -s /usr/share/easy-rsa/* /etc/openvpn/easy-rsa/
+RUN mkdir -p /etc/openvpn/ccd /etc/openvpn/certificates /etc/openvpn/logs
 
-# You'll need to transpile the React component to JS
-# For demo purposes, you can use create-react-app separately to build 
-# the admin dashboard and copy the build files to public/admin
+# Copy config and scripts
+COPY openvpn.conf /etc/openvpn/
+COPY scripts/generate_keys.sh /usr/local/bin/
+COPY scripts/create_client.sh /usr/local/bin/
+COPY scripts/revoke_client.sh /usr/local/bin/
+
+# Make scripts executable
+RUN chmod +x /usr/local/bin/generate_keys.sh
+RUN chmod +x /usr/local/bin/create_client.sh
+RUN chmod +x /usr/local/bin/revoke_client.sh
+
+# Generate server keys if they don't exist
+RUN if [ ! -f /etc/openvpn/certificates/ca.crt ]; then /usr/local/bin/generate_keys.sh; fi
+
+# Configure networking
+RUN mkdir -p /dev/net
+RUN if [ ! -c /dev/net/tun ]; then mknod /dev/net/tun c 10 200; fi
+RUN echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+
+# Run OpenVPN server
+CMD ["openvpn", "--config", "/etc/openvpn/openvpn.conf"]
+
+# Expose port
+EXPOSE 1194/udp
