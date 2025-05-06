@@ -1,61 +1,138 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# VPN4U Backend MVP
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A secure, scalable backend system for a VPN service built with Laravel, OpenVPN, and Docker.
 
-## About Laravel
+## Prerequisites
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Core Requirements
+- **Docker & Docker Compose** (v20.10+)
+- **Git** (v2.30+)
+- **PHP** (v8.1+)
+- **Composer** (v2.0+)
+- **Node.js** (v16+) & npm (v8+)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### PHP Extensions
+Ensure the following PHP extensions are enabled:
+- pdo_mysql
+- mbstring
+- openssl
+- gd
+- zip
+- fileinfo
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Network Requirements
+Make sure these ports are available on your local machine:
+- 8000: Laravel API
+- 8080: Admin Dashboard
+- 3306: MySQL
+- 6379: Redis
+- 1194: OpenVPN Server (UDP)
 
-## Learning Laravel
+## Quick Start
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. **Clone the repository**
+   ```bash
+   git clone [repository-url] vpn4u-backend
+   cd vpn4u-backend
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+2. **Set up environment file**
+   ```bash
+   cp .env.example .env
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+3. **Build and start Docker containers**
+   ```bash
+   docker-compose up -d
+   ```
 
-## Laravel Sponsors
+4. **Install dependencies and set up database**
+   ```bash
+   docker-compose exec api composer install
+   docker-compose exec api php artisan key:generate
+   docker-compose exec api php artisan jwt:secret
+   docker-compose exec api php artisan migrate --seed
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+5. **Build the admin dashboard**
+   ```bash
+   cd admin-dashboard
+   npm install
+   npm run build
+   cd ..
+   ```
 
-### Premium Partners
+## Project Structure
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
+```
+vpn4u-backend/
+├── app/                # Laravel application code
+│   ├── Http/           # Controllers and middleware
+│   ├── Models/         # Database models
+│   └── Services/       # Business logic services
+├── docker/             # Docker configuration
+│   ├── api/            # API container
+│   └── vpn-server/     # OpenVPN server container
+├── admin-dashboard/    # React admin interface
+└── public/             # Public assets
+```
 
-## Contributing
+## Key Features
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **User Authentication**: JWT-based secure authentication
+- **Server Management**: Intelligent server selection and load balancing
+- **VPN Connection**: OpenVPN integration with client configuration
+- **Subscription Control**: Tier-based access and connection limiting
+- **Admin Dashboard**: Real-time monitoring and management
 
-## Code of Conduct
+## API Documentation
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+API documentation is available at:
+- Local: http://localhost:8000/api/documentation
+- Endpoints are also described in `resources/docs/api.md`
 
-## Security Vulnerabilities
+## Admin Dashboard
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Access the admin dashboard at:
+- Local: http://localhost:8080
+
+## Testing
+
+Run the test suite with:
+```bash
+docker-compose exec api php artisan test
+```
+
+## Future Enhancements
+
+1. **Protocol Support**
+   - Add WireGuard protocol implementation
+   - Support for IKEv2/IPSec
+
+2. **Security Features**
+   - Implement multi-factor authentication
+   - Add Perfect Forward Secrecy
+   - Enhanced logging and anomaly detection
+
+3. **Performance Optimization**
+   - Server-side load metrics for better balancing
+   - Geographic routing optimization
+   - Connection speed testing and optimization
+
+4. **User Experience**
+   - Bandwidth usage monitoring and alerts
+   - Custom DNS configurations
+   - Split tunneling capabilities
+
+5. **Infrastructure**
+   - Kubernetes deployment for better scaling
+   - Multi-region server deployment
+   - Automated server provisioning
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is proprietary and confidential.
+
+## Contact
+
+For questions or inquiries, contact me at stay.hungry07212@gmail.com
